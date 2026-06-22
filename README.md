@@ -56,9 +56,6 @@ course's actual difficulty from its grade distribution, your course load that qu
 professor's RMP, and a cap that keeps the estimate from drifting above your real average in
 related classes.
 
-It's a heuristic, not trained ML — a decent ballpark, and the range matters more than the
-exact number.
-
 ## Files
 
 `inject.js` page-world CSRF capture + plan relay · `data.js` API fetch, mappers, conflict
