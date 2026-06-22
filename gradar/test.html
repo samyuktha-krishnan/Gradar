@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gradar — local preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* styles.css — Gradar injected panel */
+
+.gr-floating {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  z-index: 2147483647;
+}
+
+.gr-panel {
+  width: 320px;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  background: #fff;
+  color: #1c1726;
+  border: 1.5px solid rgba(75, 46, 131, 0.25);
+  border-radius: 12px;
+  box-shadow: 0 12px 34px rgba(75, 46, 131, 0.18);
+  padding: 16px;
+}
+
+.gr-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+.gr-code { font-size: 18px; font-weight: 800; color: #4b2e83; letter-spacing: -0.02em; }
+.gr-credits { font-size: 12px; color: #6c6478; flex: 1; }
+.gr-gened { font-size: 11px; font-weight: 700; color: #fff; background: #4b2e83; border-radius: 5px; padding: 2px 7px; }
+
+.gr-title { font-size: 12px; color: #6c6478; margin: -6px 0 12px; }
+
+.gr-pred {
+  background: linear-gradient(180deg, rgba(75,46,131,0.06), rgba(75,46,131,0.02));
+  border: 1px solid rgba(75,46,131,0.15);
+  border-radius: 9px; padding: 12px; margin-bottom: 14px;
+}
+.gr-pred-top { display: flex; align-items: baseline; gap: 8px; }
+.gr-pred-num { font-size: 28px; font-weight: 800; color: #4b2e83; line-height: 1; letter-spacing: -0.02em; }
+.gr-pred-label { font-size: 12px; color: #6c6478; }
+.gr-pred-sub { font-size: 11px; color: #8a8298; margin-top: 6px; }
+
+.gr-section-label { font-size: 11px; font-weight: 700; color: #4b2e83; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.gr-sections { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+
+.gr-srow {
+  display: flex; align-items: center; gap: 8px; text-align: left;
+  padding: 8px 10px; border-radius: 8px; font-size: 12.5px; cursor: pointer;
+  border: 1px solid #e7e2f0; background: #fff; font-family: inherit;
+}
+.gr-srow.sel { border: 1.5px solid #4b2e83; background: rgba(75,46,131,0.05); }
+.gr-srow.full { opacity: 0.5; cursor: not-allowed; }
+.gr-sln { font-family: ui-monospace, Menlo, monospace; font-weight: 700; color: #4b2e83; }
+.gr-sec { font-weight: 700; color: #1c1726; }
+.gr-meta { color: #8a8298; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gr-seats { font-weight: 700; color: #1f7a43; }
+.gr-srow.full .gr-seats { color: #b3261e; }
+
+.gr-add {
+  width: 100%; padding: 12px; border: none; border-radius: 9px;
+  font-size: 14px; font-weight: 700; color: #fff; background: #4b2e83;
+  cursor: pointer; font-family: inherit; transition: background 0.2s;
+}
+.gr-add:disabled { cursor: default; }
+.gr-add.done { background: #1f7a43; }
+
+.gr-srow.planned { border: 1.5px solid #1f7a43; background: rgba(31,122,67,0.06); }
+.gr-srow.locked { opacity: 0.4; }
+.gr-planned-badge { font-size: 11px; font-weight: 800; color: #1f7a43; letter-spacing: 0.06em; }
+.gr-locked-note { font-size: 11px; color: #8a8298; margin: 8px 0 12px; }
+.gr-link { display: block; width: 100%; margin-top: 8px; padding: 6px; border: none; background: none; color: #4b2e83; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; text-decoration: underline; }
+
+.gr-note { font-size: 10.5px; color: #85754d; margin-top: 10px; line-height: 1.4; }
+
+.gr-search-wrap { margin-bottom: 14px; }
+.gr-search {
+  width: 100%; box-sizing: border-box; padding: 10px 12px; font-size: 13px;
+  border: 1px solid #e7e2f0; border-radius: 8px; outline: none; font-family: inherit;
+  color: #1c1726; background: #faf9fc;
+}
+.gr-search:focus { border-color: #4b2e83; background: #fff; }
+.gr-search-msg { font-size: 11px; color: #b3261e; margin-top: 6px; }
+.gr-coursebox { border-top: 1px solid #efebf6; padding-top: 14px; }
+.gr-card { display: block; }
+
+.gr-warn { font-size: 12px; font-weight: 600; color: #92400e; background: #fef3c7;
+  border: 1px solid #fde68a; border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; }
+.gr-add.warn { background: #b45309; }
+
+body{margin:0;background:#eceaf2;font-family:"Inter",system-ui,sans-serif;}
+.fake-page{max-width:720px;margin:40px auto;padding:24px;color:#6c6478;}
+.fake-page h1{color:#4b2e83;}
+#gr-mount.gr-floating{position:static;}
+#gr-mount{display:flex;justify-content:center;margin-top:24px;}
+</style></head><body>
+<div class="fake-page"><h1>MyPlan (simulated)</h1>
+<p>Local preview. The seeded schedule below has CHEM 142 on MWF 11:30, so CSE 143's 11:30 section shows a <b>time-conflict warning</b>.</p>
+<div id="gr-mount" class="gr-floating"></div></div>
+<script>
+/*
+  data.js
+  Sample data so the extension runs offline today.
+
+  REAL VERSION — read everything off the user's OWN logged-in session (see README):
+    readCourseFromPage()     -> the course on the MyPlan page (DOM)
+    readTranscriptFromMyUW() -> the user's unofficial transcript (their past grades)
+    readCatalog()            -> search results / course lookups in-session
+  Each distribution is a list of { gpa, n }: gpa = bucket midpoint, n = students.
+*/
+
+// the student's own past courses (their grade + that course's curve)
+const SAMPLE_TRANSCRIPT = [
+  { code: "CSE 142",  gpa: 3.7, credits: 4, dist: [ {gpa:0.5,n:5},{gpa:1.5,n:11},{gpa:2.5,n:35},{gpa:3.2,n:30},{gpa:3.8,n:40} ] },
+  { code: "MATH 124", gpa: 3.1, credits: 5, dist: [ {gpa:0.5,n:8},{gpa:1.5,n:18},{gpa:2.5,n:42},{gpa:3.2,n:18},{gpa:3.8,n:14} ] },
+  { code: "STAT 311", gpa: 3.5, credits: 5, dist: [ {gpa:0.5,n:5},{gpa:1.5,n:12},{gpa:2.5,n:40},{gpa:3.2,n:25},{gpa:3.8,n:24} ] },
+  { code: "ENGL 131", gpa: 3.9, credits: 5, dist: [ {gpa:0.5,n:1},{gpa:1.5,n:3},{gpa:2.5,n:12},{gpa:3.2,n:18},{gpa:3.8,n:44} ] },
+];
+
+// a small sample catalog the search box looks through
+const SAMPLE_CATALOG = [
+  { code: "CSE 143", title: "Computer Programming II", credits: 5, genEd: ["NSc","RSN"],
+    dist: [ {gpa:0.5,n:3},{gpa:1.5,n:9},{gpa:2.5,n:31},{gpa:3.2,n:28},{gpa:3.8,n:29} ],
+    sections: [
+      { sln:"12814", sec:"A", inst:"Hartman", when:"MWF 9:30",  open:0,  total:300, meets:[{days:["M","W","F"],start:570,end:620}] },
+      { sln:"12819", sec:"B", inst:"Hu",      when:"MWF 11:30", open:14, total:300, meets:[{days:["M","W","F"],start:690,end:740}] },
+      { sln:"12823", sec:"C", inst:"Hu",      when:"MWF 1:30",  open:47, total:300, meets:[{days:["M","W","F"],start:810,end:860}] },
+    ] },
+  { code: "MATH 124", title: "Calculus with Analytic Geometry I", credits: 5, genEd: ["NSc","RSN"],
+    dist: [ {gpa:0.5,n:8},{gpa:1.5,n:18},{gpa:2.5,n:42},{gpa:3.2,n:18},{gpa:3.8,n:14} ],
+    sections: [
+      { sln:"17640", sec:"A", inst:"Patel", when:"MWF 8:30",  open:31, total:230 },
+      { sln:"17645", sec:"C", inst:"Yang",  when:"MWF 10:30", open:0,  total:230 },
+    ] },
+  { code: "STAT 311", title: "Elements of Statistical Methods", credits: 5, genEd: ["NSc","RSN"],
+    dist: [ {gpa:0.5,n:5},{gpa:1.5,n:12},{gpa:2.5,n:40},{gpa:3.2,n:25},{gpa:3.8,n:24} ],
+    sections: [
+      { sln:"19422", sec:"A", inst:"Nelson", when:"TTh 10:00", open:22, total:250 },
+    ] },
+  { code: "ENGL 131", title: "Composition: Exposition", credits: 5, genEd: ["C","W"],
+    dist: [ {gpa:0.5,n:1},{gpa:1.5,n:3},{gpa:2.5,n:12},{gpa:3.2,n:18},{gpa:3.8,n:44} ],
+    sections: [
+      { sln:"14881", sec:"A", inst:"Ramos",  when:"MW 1:30",  open:6, total:24 },
+      { sln:"14882", sec:"B", inst:"Okafor", when:"TTh 2:30", open:0, total:24 },
+    ] },
+  { code: "PHIL 100", title: "Introduction to Philosophy", credits: 5, genEd: ["A&H"],
+    dist: [ {gpa:0.5,n:2},{gpa:1.5,n:6},{gpa:2.5,n:22},{gpa:3.2,n:27},{gpa:3.8,n:38} ],
+    sections: [
+      { sln:"16003", sec:"A", inst:"Lee", when:"MWF 12:30", open:48, total:200 },
+    ] },
+];
+
+const SAMPLE_COURSE = SAMPLE_CATALOG[0]; // the course "on the page"
+
+function readCourseFromPage()     { return SAMPLE_COURSE; }     // TODO: MyPlan DOM
+function readTranscriptFromMyUW() { return SAMPLE_TRANSCRIPT; } // TODO: MyUW transcript
+function readCatalog()            { return SAMPLE_CATALOG; }    // TODO: in-session search
+
+function getCourse()     { return readCourseFromPage(); }
+function getTranscript() { return readTranscriptFromMyUW(); }
+function getCatalog()    { return readCatalog(); }
+
+// ---- real in-session fetch (the live path) -------------------------------
+// MyPlan's frontend loads each course from its course-app API using your session
+// cookies. The course page URL holds the courseId (?id=<guid>); we read that and
+// fetch the same "details" endpoint MyPlan itself uses, then map the JSON.
+
+// CONFIRMED endpoint shape (from the real Request URL):
+//   https://course-app-api.planning.sis.uw.edu/api/courses/<CODE>/details?courseId=<id>
+const MYPLAN_DETAILS_URL = (ref) =>
+  "https://course-app-api.planning.sis.uw.edu/api/courses/" + ref.code + "/details?courseId=" + ref.id;
+
+// pull the course code + id straight from the MyPlan page URL,
+// e.g. .../course/#/courses/CSE%20421?id=8765b136-...
+function getCourseRefFromPage() {
+  const href = location.href;
+  const id = (href.match(/[?&]id=([0-9a-fA-F-]{36})/) || [])[1];
+  let code = (href.match(/\/courses\/([^?#]+)/) || [])[1];
+  if (!id || !code) return null;
+  try { code = encodeURIComponent(decodeURIComponent(code)); } catch (e) {}  // -> CSE%20421
+  return { id, code };
+}
+
+// map MyPlan's "details" JSON -> Gradar's course shape (verified on real CSE 421 data)
+function mapApiCourse(json) {
+  const csd = json && json.courseSummaryDetails;
+  if (!csd) return null;
+  const inst = json.courseOfferingInstitutionList || [];
+  const term = (inst[0] && inst[0].courseOfferingTermList && inst[0].courseOfferingTermList[0]) || {};
+  const sections = (term.activityOfferingItemList || []).map(a => {
+    const md = (a.meetingDetailsList && a.meetingDetailsList[0]) || {};
+    const start = (md.time || "").split("-")[0].trim();
+    const max = parseInt(a.enrollMaximum, 10) || 0, cnt = parseInt(a.enrollCount, 10) || 0;
+    return { sln: a.registrationCode, sec: a.code, inst: a.instructor || "Staff",
+      when: (md.days ? md.days + " " : "") + start,
+      open: Math.max(0, max - cnt), total: max,
+      type: a.activityOfferingType, primary: !!a.primary,
+      parent: a.primaryActivityOfferingCode || a.code,
+      meets: meetsFromList(a.meetingDetailsList) };
+  }).filter(s => s.sln);
+  const genEd = ((csd.abbrGenEdRequirements && csd.abbrGenEdRequirements.length)
+      ? csd.abbrGenEdRequirements : (csd.genEdRequirements || []))
+    .map(g => typeof g === "string" ? g : (g.abbr || g.code || g.name)).filter(Boolean);
+  return {
+    code: (csd.code || "").replace(/\s+/g, " ").trim(),
+    title: csd.courseTitle || "",
+    credits: parseInt(csd.credit, 10) || csd.credit,
+    genEd,
+    dist: null,            // grade distribution comes from a separate DawgPath request (next capture)
+    sections: sections.length ? sections : [{ sln: "\u2014", sec: "\u2014", inst: "", when: "", open: 0, total: 0 }],
+  };
+}
+
+// ask the background worker to fetch (bypasses the content-script CORS block)
+function bgFetch(url) {
+  return new Promise((resolve) => {
+    try {
+      chrome.runtime.sendMessage({ type: "gr-fetch", url }, (resp) => {
+        if (chrome.runtime.lastError || !resp || !resp.ok) return resolve(null);
+        resolve(resp.data);
+      });
+    } catch (e) { resolve(null); }
+  });
+}
+
+// read the course the user is currently viewing on MyPlan
+async function readCourseFromPageAsync() {
+  const ref = getCourseRefFromPage();
+  if (!ref) return null;
+  const json = await bgFetch(MYPLAN_DETAILS_URL(ref));
+  return json ? mapApiCourse(json) : null;
+}
+
+// ---- free-text search: type a course -> resolve its id -> fetch details ----
+// MyPlan's search bar hits its own request to turn text into a course + id.
+// Capture that request, then fill in these two pieces and the box searches
+// every course on MyPlan.
+
+// 1) the search endpoint (FILL IN from a capture), e.g.
+//    (q) => "https://course-app-api.planning.sis.uw.edu/api/courses/search?query=" + encodeURIComponent(q)
+const MYPLAN_SEARCH_URL = null;
+
+// 2) from the search response, return the best match's { code, id } (FILL IN once we see the shape)
+function pickSearchHit(results, query) {
+  return null;
+}
+
+async function searchCourse(query) {
+  if (!MYPLAN_SEARCH_URL) return null;
+  const results = await bgFetch(MYPLAN_SEARCH_URL(query));
+  const hit = pickSearchHit(results, query);  // { code, id }
+  if (!hit) return null;
+  const json = await bgFetch(MYPLAN_DETAILS_URL(hit));
+  return json ? mapApiCourse(json) : null;
+}
+
+// ---- schedule conflict detection -----------------------------------------
+function _parseDays(s) {
+  const out = []; s = (s || "").replace(/Th/g, "\u0001"); // token Thursday
+  for (const ch of s) { if (ch === "\u0001") out.push("Th"); else if ("MTWFS".includes(ch)) out.push(ch); }
+  return out;
+}
+function _parseTime(t) {
+  const m = (t || "").match(/(\d{1,2}):(\d{2})\s*([AaPp][Mm])/);
+  if (!m) return null;
+  let h = (+m[1]) % 12; if (/p/i.test(m[3])) h += 12;
+  return h * 60 + (+m[2]);
+}
+function meetsFromList(list) {
+  return (list || []).map(md => {
+    const days = _parseDays(md.days);
+    const parts = (md.time || "").split("-").map(x => x.trim());
+    const start = _parseTime(parts[0]), end = _parseTime(parts[1]);
+    return (days.length && start != null && end != null) ? { days, start, end } : null;
+  }).filter(Boolean);
+}
+function meetsConflict(a, b) {
+  for (const x of (a || [])) for (const y of (b || [])) {
+    if (x.days.some(d => y.days.includes(d)) && x.start < y.end && y.start < x.end) return true;
+  }
+  return false;
+}
+function conflictsWith(section, planned, currentCode) {
+  for (const p of (planned || [])) {
+    if (p.code === currentCode) continue;            // ignore the same course
+    if (meetsConflict(section.meets, p.meets)) return p;
+  }
+  return null;
+}
+
+// ---- persistent "planned in Gradar" store (drives conflict checks) -------
+let _memPlanned = [];
+const GR_PLANNED_KEY = "gr-planned";
+function getPlanned() {
+  return new Promise(resolve => {
+    try { chrome.storage.local.get(GR_PLANNED_KEY, o => resolve((o && o[GR_PLANNED_KEY]) || [])); }
+    catch (e) { resolve(_memPlanned); }
+  });
+}
+function setPlanned(list) {
+  _memPlanned = list;
+  try { chrome.storage.local.set({ [GR_PLANNED_KEY]: list }); } catch (e) {}
+}
+async function addPlanned(items, code) {
+  const cur = (await getPlanned()).filter(p => p.code !== code); // replace this course's entries
+  setPlanned(cur.concat(items));
+}
+
+/*
+  predict.js
+  Predict an achievable GPA in a target course.
+
+  Idea (the honest version of "students like you"):
+    We can't use other students' individual transcripts — those are FERPA-protected
+    and not public. So instead we measure where YOU land within each course's curve,
+    then read that same percentile off the TARGET course's curve.
+
+  Steps:
+    1. For each past course, find your percentile within its distribution.
+    2. Average those -> how you tend to perform relative to the room.
+    3. Map that percentile onto the target course's distribution -> predicted GPA.
+    4. Use the spread of your percentiles to produce a range, not a false-precision point.
+*/
+
+function _total(dist) { return dist.reduce((s, d) => s + d.n, 0); }
+
+function percentileOf(gpa, dist) {
+  const total = _total(dist);
+  if (!total) return 0.5;
+  const atOrBelow = dist.filter(d => d.gpa <= gpa).reduce((s, d) => s + d.n, 0);
+  return atOrBelow / total;
+}
+
+function gpaAtPercentile(p, dist) {
+  const total = _total(dist);
+  let cum = 0;
+  for (const d of dist) {
+    cum += d.n / total;
+    if (cum >= p) return d.gpa;
+  }
+  return dist[dist.length - 1].gpa;
+}
+
+function _mean(a) { return a.reduce((s, x) => s + x, 0) / a.length; }
+function _std(a) { const m = _mean(a); return Math.sqrt(_mean(a.map(x => (x - m) ** 2))); }
+
+// transcript: [{ code, gpa, dist }],  target: { dist }
+function predictGPA(transcript, target) {
+  if (!target || !target.dist || !target.dist.length) {
+    return { ok: false, reason: "Grade data for this course isn't loaded yet." };
+  }
+  const usable = transcript.filter(c => c.dist && c.dist.length);
+  if (usable.length < 3) {
+    return { ok: false, reason: "Add at least 3 past courses to get a prediction." };
+  }
+
+  const pcts = usable.map(c => percentileOf(c.gpa, c.dist));
+  const pMean = _mean(pcts);
+  const pSpread = _std(pcts);
+
+  const round = x => Math.round(x * 100) / 100;
+  return {
+    ok: true,
+    predicted: round(gpaAtPercentile(pMean, target.dist)),
+    range: [
+      round(gpaAtPercentile(Math.max(0.02, pMean - pSpread), target.dist)),
+      round(gpaAtPercentile(Math.min(0.98, pMean + pSpread), target.dist)),
+    ],
+    yourPercentile: Math.round(pMean * 100),
+    confidence: usable.length >= 6 ? "higher" : "rough",
+  };
+}
+
+/*
+  panel.js
+  Builds the Gradar panel: a search box + the course card
+  (grades, GPA prediction, lecture/quiz picker, planned state, conflict warning).
+*/
+
+function _el(tag, props = {}, children = []) {
+  const e = document.createElement(tag);
+  for (const k in props) { if (props[k] != null) e[k] = props[k]; }
+  for (const c of [].concat(children)) {
+    if (c) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  }
+  return e;
+}
+
+function buildCourseCard(course, prediction, schedule) {
+  const card = _el("div", { className: "gr-card" });
+  let plan = schedule || [];   // your already-planned sections (for conflict checks)
+
+  // header + title
+  card.appendChild(_el("div", { className: "gr-head" }, [
+    _el("span", { className: "gr-code", textContent: course.code }),
+    _el("span", { className: "gr-credits", textContent: course.credits ? course.credits + " cr" : "" }),
+    ...(course.genEd || []).map(g => _el("span", { className: "gr-gened", textContent: g })),
+  ]));
+  if (course.title) card.appendChild(_el("div", { className: "gr-title", textContent: course.title }));
+
+  // prediction
+  const pred = _el("div", { className: "gr-pred" });
+  if (prediction.ok) {
+    pred.appendChild(_el("div", { className: "gr-pred-top" }, [
+      _el("span", { className: "gr-pred-num", textContent: prediction.predicted.toFixed(2) }),
+      _el("span", { className: "gr-pred-label",
+        textContent: "your likely GPA \u00b7 " + prediction.range[0].toFixed(1) + "\u2013" + prediction.range[1].toFixed(1) + " range" }),
+    ]));
+    pred.appendChild(_el("div", { className: "gr-pred-sub",
+      textContent: "You tend to land around the " + prediction.yourPercentile + "th percentile \u00b7 " + prediction.confidence + " confidence" }));
+  } else {
+    pred.appendChild(_el("div", { className: "gr-pred-sub", textContent: prediction.reason }));
+  }
+  card.appendChild(pred);
+
+  // sections: lectures (primary) vs quiz/lab (secondary)
+  const all = course.sections || [];
+  let primaries = all.filter(s => s.primary);
+  if (!primaries.length) primaries = all;
+  const quizzesOf = (p) => all.filter(s => !s.primary && s.parent === p.sec);
+
+  let selP = primaries.find(s => s.open > 0) || primaries[0];
+  let selQ = null;
+  let planned = null;  // { p, q } once added
+
+  const controls = _el("div", { className: "gr-controls" });
+  card.appendChild(controls);
+
+  function row(s, opts) {
+    const full = s.open === 0;
+    const cls = "gr-srow" + (opts.active ? " sel" : "")
+      + (full && !opts.locked ? " full" : "") + (opts.locked ? " locked" : "");
+    const isBtn = !opts.locked;
+    return _el(isBtn ? "button" : "div", {
+      className: cls,
+      disabled: isBtn && full && !opts.active ? true : null,
+      onclick: isBtn && !full ? () => opts.pick(s) : null,
+    }, [
+      _el("code", { className: "gr-sln", textContent: s.sln }),
+      _el("span", { className: "gr-sec", textContent: s.sec }),
+      _el("span", { className: "gr-meta", textContent: (s.inst ? s.inst + " \u00b7 " : "") + s.when }),
+      _el("span", { className: "gr-seats", textContent: full ? "FULL" : s.open + " open" }),
+    ]);
+  }
+
+  function findConflict() {
+    for (const c of [selP, selQ].filter(Boolean)) {
+      const hit = conflictsWith(c, plan, course.code);
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  function addSln() { return selQ ? selQ.sln : (selP ? selP.sln : "\u2014"); }
+
+  function doAdd() {
+    const btn = controls.querySelector(".gr-add");
+    if (btn) { btn.disabled = true; btn.textContent = "Adding to your plan\u2026"; }
+    setTimeout(async () => {
+      const items = [selP, selQ].filter(Boolean).map(s =>
+        ({ code: course.code, sec: s.sec, sln: s.sln, when: s.when, meets: s.meets || [] }));
+      try { await addPlanned(items, course.code); plan = await getPlanned(); } catch (e) {}
+      planned = { p: selP, q: selQ };
+      render();
+    }, 700);
+  }
+
+  function render() {
+    controls.textContent = "";
+
+    if (!planned) {
+      controls.appendChild(_el("div", { className: "gr-section-label",
+        textContent: primaries.length > 1 ? "Pick a section" : "Section" }));
+      const plist = _el("div", { className: "gr-sections" });
+      primaries.forEach(s => plist.appendChild(row(s, { active: s === selP, pick: (x) => { selP = x; selQ = null; render(); } })));
+      controls.appendChild(plist);
+
+      const qs = quizzesOf(selP);
+      if (qs.length) {
+        if (!selQ) selQ = qs.find(s => s.open > 0) || qs[0];
+        controls.appendChild(_el("div", { className: "gr-section-label", textContent: "Pick a quiz section" }));
+        const qlist = _el("div", { className: "gr-sections" });
+        qs.forEach(s => qlist.appendChild(row(s, { active: s === selQ, pick: (x) => { selQ = x; render(); } })));
+        controls.appendChild(qlist);
+      }
+
+      const conflict = findConflict();
+      if (conflict) {
+        controls.appendChild(_el("div", { className: "gr-warn",
+          textContent: "\u26a0 Time conflict with " + conflict.code + " " + conflict.sec
+            + (conflict.when ? " (" + conflict.when + ")" : "") }));
+      }
+      controls.appendChild(_el("button", { className: "gr-add" + (conflict ? " warn" : ""),
+        textContent: "+ Add SLN " + addSln() + " to MyPlan", onclick: doAdd }));
+    } else {
+      controls.appendChild(_el("div", { className: "gr-section-label", textContent: "Planned" }));
+      const list = _el("div", { className: "gr-sections" });
+      list.appendChild(row(planned.p, { active: true, locked: true }));
+      if (planned.q) list.appendChild(row(planned.q, { active: true, locked: true }));
+      controls.appendChild(list);
+      controls.appendChild(_el("div", { className: "gr-locked-note",
+        textContent: "Planned \u2014 only one section per course." }));
+      controls.appendChild(_el("button", { className: "gr-add done", disabled: true,
+        textContent: "\u2713 Planned \u00b7 SLN " + (planned.q ? planned.q.sln : planned.p.sln) }));
+      controls.appendChild(_el("button", { className: "gr-link", textContent: "Change section",
+        onclick: () => { planned = null; render(); } }));
+    }
+  }
+  render();
+
+  card.appendChild(_el("div", { className: "gr-note",
+    textContent: "Course & seats from MyPlan \u00b7 grade prediction needs DawgPath data." }));
+  return card;
+}
+
+// ---- the whole panel: a search box + the course card ----
+function buildGradarPanel(initialCourse, transcript, schedule) {
+  const root = _el("div", { className: "gr-panel" });
+
+  const search = _el("input", { className: "gr-search", type: "text",
+    placeholder: "Type any course \u2014 e.g. STAT 390" });
+  const msg = _el("div", { className: "gr-search-msg" });
+  root.appendChild(_el("div", { className: "gr-search-wrap" }, [search, msg]));
+
+  const box = _el("div", { className: "gr-coursebox" });
+  root.appendChild(box);
+
+  function show(course) {
+    box.textContent = "";
+    box.appendChild(buildCourseCard(course, predictGPA(transcript, course), schedule));
+  }
+
+  search.addEventListener("keydown", async e => {
+    if (e.key !== "Enter") return;
+    const q = search.value.trim();
+    if (!q) return;
+    msg.textContent = "Looking up\u2026";
+    let course = null;
+    try { course = await searchCourse(q); } catch (_) {}
+    if (course) { msg.textContent = ""; show(course); }
+    else { msg.textContent = "Couldn't find that course (search isn't connected yet)."; }
+  });
+
+  if (initialCourse) show(initialCourse);
+  return root;
+}
+
+// pretend you've already planned CHEM 142 on MWF 11:30 -> demonstrates the conflict warning
+const seededSchedule = [{ code:"CHEM 142", sec:"A", sln:"11111", when:"MWF 11:30 AM",
+  meets:[{days:["M","W","F"],start:690,end:740}] }];
+document.getElementById("gr-mount").appendChild(buildGradarPanel(getCourse(), getTranscript(), seededSchedule));
+</script></body></html>

@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "Gradar",
+  "version": "0.1.0",
+  "description": "Registration, untabbed. Grades, gen-ed credit, SLN, seats, and a personalized GPA prediction \u2014 injected onto MyPlan.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://myplan.uw.edu/*",
+    "https://www.washington.edu/students/timeschd/*",
+    "https://dawgpath.uw.edu/*",
+    "https://my.uw.edu/*",
+    "https://course-app-api.planning.sis.uw.edu/*",
+    "https://www.ratemyprofessors.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://myplan.uw.edu/*"
+      ],
+      "js": [
+        "inject.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://myplan.uw.edu/*",
+        "https://www.washington.edu/students/timeschd/*"
+      ],
+      "js": [
+        "data.js",
+        "predict.js",
+        "panel.js",
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
